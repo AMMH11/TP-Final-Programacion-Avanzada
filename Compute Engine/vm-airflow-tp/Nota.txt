@@ -1,0 +1,46 @@
+| Archivo                  | Rol                                                   | Corre en                                               |
+| ------------------------ | ----------------------------------------------------- | --------------------------------------------------     |
+| `dag_recomendaciones.py` | Ejecuta la pipeline de ETL en Airflow, almacena datos | Airflow (Compute Engine)(expuesto en HTTP, puerto 8081)|
+| `main instancia vm.py`   | Sirve los datos procesados a través de una API        | Docker + Cloud Run (expuesto en HTTP, puerto 8080)     |
+
+dag_recomendaciones.py → Airflow: pipeline de datos
+Este archivo define la pipeline de procesamiento diario de datos en Apache Airflow. Tiene dos funciones principales:
+
+descargar_y_procesar_data:
+
+Descarga archivos desde un bucket en Google Cloud Storage (ads_views.csv y product_views.csv).
+
+Filtra los datos por la fecha de ejecución del DAG.
+
+Calcula dos modelos: top_ctr (productos con mejor click-through rate) y top_product (productos más vistos).
+
+Guarda estos resultados como XComs (intercambio entre tareas en Airflow).
+
+insertar_en_postgres:
+
+Toma los resultados de los modelos anteriores y los inserta en la base de datos PostgreSQL en las tablas top_ctr y top_product.
+
+El DAG está configurado para ejecutarse todos los días automáticamente (@daily), desde el 19 de mayo de 2025, y utiliza dos tareas conectadas en secuencia: procesar_data → cargar_en_sql.
+
+main instancia vm.py → FastAPI: microservicio de recomendaciones
+Este archivo es el backend de la API desarrollada con FastAPI. Define endpoints HTTP que permiten consultar los datos procesados:
+
+/recommendations/{adv_id}/{model}:
+
+Devuelve una lista de productos recomendados para un advertiser_id usando el modelo especificado (top_ctr o top_product).
+
+Usa los datos de la fecha de ayer (today - 1).
+
+/history/{adv_id}:
+
+Muestra el historial de productos recomendados para un advertiser en los últimos 7 días, tanto para top_ctr como top_product.
+
+/stats/:
+
+Devuelve una estadística simple: cantidad de anunciantes únicos en la tabla top_ctr.
+
+Resumen:
+
+FastAPI (API REST) → puerto 8080
+
+Airflow (UI web) → puerto 8081
