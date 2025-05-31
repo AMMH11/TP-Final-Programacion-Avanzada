@@ -1,0 +1,13 @@
+[Unit]
+Description=Airflow Webserver
+After=network.target
+
+[Service]
+User=adaia_montano
+Group=adaia_montano
+Environment="AIRFLOW_HOME=/home/adaia_montano/airflow"
+ExecStart=/home/adaia_montano/airflow_venv/bin/airflow webserver -p 8081
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

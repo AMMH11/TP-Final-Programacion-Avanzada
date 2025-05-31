@@ -1,0 +1,13 @@
+[Unit]
+Description=Airflow Scheduler
+After=network.target
+
+[Service]
+User=adaia_montano
+Group=adaia_montano
+Environment="AIRFLOW_HOME=/home/adaia_montano/airflow"
+ExecStart=/home/adaia_montano/airflow_venv/bin/airflow scheduler
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
